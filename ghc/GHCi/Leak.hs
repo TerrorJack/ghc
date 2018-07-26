@@ -10,6 +10,8 @@ import GHC
 import Outputable
 import HscTypes
 import UniqDFM
+import Platform (target32Bit)
+import Prelude
 import System.Mem
 import System.Mem.Weak
 
