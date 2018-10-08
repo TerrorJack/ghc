@@ -1318,9 +1318,13 @@ hscGenHardCode hsc_env cgguts mod_summary output_filename = do
                        corePrepPgm hsc_env this_mod location
                                    core_binds data_tycons
         -----------------  Convert to STG ------------------
-        (stg_binds, (caf_ccs, caf_cc_stacks))
+        core_to_stg_result
             <- {-# SCC "CoreToStg" #-}
                myCoreToStg dflags this_mod prepd_binds
+
+        (stg_binds, (caf_ccs, caf_cc_stacks)) <-
+            runHsc hsc_env $ withPlugins dflags
+                (\p opts -> stgAction p opts mod_summary) core_to_stg_result
 
         let cost_centre_info =
               (S.toList local_ccs ++ caf_ccs, caf_cc_stacks)
@@ -1343,8 +1347,12 @@ hscGenHardCode hsc_env cgguts mod_summary output_filename = do
                                 stg_binds hpc_info
 
             ------------------  Code output -----------------------
-            rawcmms0 <- {-# SCC "cmmToRawCmm" #-}
+            cmm_to_rawcmm_result <- {-# SCC "cmmToRawCmm" #-}
                       cmmToRawCmm dflags cmms
+
+            rawcmms0 <-
+                runHsc hsc_env $ withPlugins dflags
+                    (\p opts -> rawCmmAction p opts (FromHaskell mod_summary)) cmm_to_rawcmm_result
 
             let dump a = do dumpIfSet_dyn dflags Opt_D_dump_cmm_raw "Raw Cmm"
                               (ppr a)
@@ -1404,6 +1412,8 @@ hscCompileCmmFile hsc_env filename output_filename = runHsc hsc_env $ do
             cmm_mod = mkModule (thisPackage dflags) mod_name
         (_, cmmgroup) <- cmmPipeline hsc_env (emptySRT cmm_mod) cmm
         rawCmms <- cmmToRawCmm dflags (Stream.yield cmmgroup)
+            >>= runHsc hsc_env . withPlugins dflags
+                (\p opts -> rawCmmAction p opts (FromCmm filename))
         _ <- codeOutput dflags cmm_mod output_filename no_loc NoStubs [] []
              rawCmms
         return ()

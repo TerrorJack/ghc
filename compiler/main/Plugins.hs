@@ -3,6 +3,7 @@
 module Plugins (
       FrontendPlugin(..), defaultFrontendPlugin, FrontendPluginAction
     , Plugin(..), CommandLineOption, LoadedPlugin(..), lpModuleName
+    , CmmSource(..)
     , defaultPlugin, keepRenamedSource, withPlugins, withPlugins_
     , PluginRecompile(..)
     , purePlugin, impurePlugin, flagRecompile
@@ -22,6 +23,10 @@ import Module ( ModuleName, Module(moduleName))
 import Fingerprint
 import Data.List
 import Outputable (Outputable(..), text, (<+>))
+import StgSyn
+import CostCentre
+import Stream (Stream)
+import Cmm
 
 --Qualified import so we can define a Semigroup instance
 -- but it doesn't clash with Outputable.<>
@@ -73,6 +78,13 @@ data Plugin = Plugin {
     -- the loading of the plugin interface. Tools that rely on information from
     -- modules other than the currently compiled one should implement this
     -- function.
+  , stgAction :: [CommandLineOption] -> ModSummary -> ([StgTopBinding], CollectedCCs)
+                         -> Hsc ([StgTopBinding], CollectedCCs)
+    -- ^ Modify STG. This is called by HscMain when STG is generated from Core.
+  , rawCmmAction :: [CommandLineOption] -> CmmSource -> Stream IO RawCmmGroup ()
+                         -> Hsc (Stream IO RawCmmGroup ())
+    -- ^ Modify raw Cmm. This is called by HscMain when raw Cmm is generated,
+    -- as a result of compiling either a .cmm file, or a Haskell module.
   }
 
 -- Note [Source plugins]
@@ -92,6 +104,28 @@ data Plugin = Plugin {
 -- For the full discussion, check the full proposal at:
 -- https://ghc.haskell.org/trac/ghc/wiki/ExtendedPluginsProposal
 
+-- Note [Backend plugins]
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-- The `Plugin` datatype have been extended by fields that allow access to the
+-- post-Core intermediate representations in the backend. The fields are
+-- `stgAction` and `rawCmmAction`.
+--
+-- The main purpose of these plugins is to help developers to write custom GHC
+-- backends which compile Haskell to experimental platforms (e.g. WebAssembly).
+-- By using backend plugins, one can intercept STG/Cmm from regular compilation
+-- pipelines, and use them as starting points of their own compilers.
+--
+-- To properly support a new target platform in GHC, using only backend plugins is
+-- not sufficient. The STG/Cmm data captured by these plugins are assumed to be run
+-- on the target platform configured at GHC build time, and some settings may not
+-- match the platform one wish to re-target (e.g. word size). Hence, developers are
+-- responsible for extra preparations like setting up a new `libdir` or modifying
+-- platform settings in `DynFlags`.
+
+-- | Specifies the source of a Cmm IR.
+data CmmSource
+  = FromCmm FilePath
+  | FromHaskell ModSummary
 
 -- | A plugin with its arguments. The result of loading the plugin.
 data LoadedPlugin = LoadedPlugin {
@@ -147,6 +181,8 @@ defaultPlugin = Plugin {
       , typeCheckResultAction = \_ _ -> return
       , spliceRunAction       = \_ -> return
       , interfaceLoadAction   = \_ -> return
+      , stgAction             = \_ _ -> return
+      , rawCmmAction          = \_ _ -> return
     }
 
 
