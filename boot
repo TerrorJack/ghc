@@ -190,7 +190,7 @@ def check_build_mk():
                 http://ghc.haskell.org/trac/ghc/wiki/Building/Using#Buildconfiguration
             """))
 
-check_for_url_rewrites()
+# check_for_url_rewrites()
 if not args.hadrian:
     boot_pkgs()
 autoreconf()
