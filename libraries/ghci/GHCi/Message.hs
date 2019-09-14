@@ -40,7 +40,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as LB
 import Data.Dynamic
-import Data.Typeable (TypeRep)
+import Data.Typeable (Typeable, TypeRep)
 import Data.IORef
 import Data.Map (Map)
 import GHC.Generics
@@ -254,7 +254,7 @@ data THMessage a where
 
 deriving instance Show (THMessage a)
 
-data THMsg = forall a . (Binary a, Show a) => THMsg (THMessage a)
+data THMsg = forall a . (Binary a, Show a, Typeable a) => THMsg (THMessage a)
 
 getTHMessage :: Get THMsg
 getTHMessage = do
@@ -308,6 +308,9 @@ putTHMessage m = case m of
   AddForeignFilePath lang a   -> putWord8 20 >> put lang >> put a
   AddCorePlugin a             -> putWord8 21 >> put a
 
+instance Binary THMsg where
+  get = getTHMessage
+  put (THMsg m) = putTHMessage m
 
 data EvalOpts = EvalOpts
   { useSandboxThread :: Bool
@@ -414,7 +417,7 @@ data QState = QState
   }
 instance Show QState where show _ = "<QState>"
 
-data Msg = forall a . (Binary a, Show a) => Msg (Message a)
+data Msg = forall a . (Binary a, Show a, Typeable a) => Msg (Message a)
 
 getMessage :: Get Msg
 getMessage = do
@@ -493,6 +496,10 @@ putMessage m = case m of
   RunModFinalizers a b        -> putWord8 32 >> put a >> put b
   AddSptEntry a b             -> putWord8 33 >> put a >> put b
   RunTH st q loc ty           -> putWord8 34 >> put st >> put q >> put loc >> put ty
+
+instance Binary Msg where
+  get = getMessage
+  put (Msg m) = putMessage m
 
 -- -----------------------------------------------------------------------------
 -- Reading/writing messages
