@@ -10,7 +10,7 @@ Desugaring foreign declarations (see also DsCCall).
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module DsForeign ( dsForeigns ) where
+module DsForeign where
 
 #include "HsVersions.h"
 import GhcPrelude
