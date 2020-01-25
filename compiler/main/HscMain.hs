@@ -80,6 +80,7 @@ module HscMain
     , ioMsgMaybe
     , showModuleIndex
     , hscAddSptEntries
+    , doCodeGen
     ) where
 
 import GhcPrelude
@@ -1344,7 +1345,7 @@ hscGenHardCode hsc_env cgguts mod_summary output_filename = do
 
             ------------------  Code output -----------------------
             rawcmms0 <- {-# SCC "cmmToRawCmm" #-}
-                      cmmToRawCmm dflags cmms
+                      lookupHook cmmToRawCmmHook cmmToRawCmm dflags dflags (Just this_mod) cmms
 
             let dump a = do dumpIfSet_dyn dflags Opt_D_dump_cmm_raw "Raw Cmm"
                               (ppr a)
@@ -1403,7 +1404,7 @@ hscCompileCmmFile hsc_env filename output_filename = runHsc hsc_env $ do
             mod_name = mkModuleName $ "Cmm$" ++ FilePath.takeFileName filename
             cmm_mod = mkModule (thisPackage dflags) mod_name
         (_, cmmgroup) <- cmmPipeline hsc_env (emptySRT cmm_mod) cmm
-        rawCmms <- cmmToRawCmm dflags (Stream.yield cmmgroup)
+        rawCmms <- lookupHook cmmToRawCmmHook cmmToRawCmm dflags dflags Nothing (Stream.yield cmmgroup)
         _ <- codeOutput dflags cmm_mod output_filename no_loc NoStubs [] []
              rawCmms
         return ()
@@ -1428,7 +1429,7 @@ doCodeGen hsc_env this_mod data_tycons
 
     let cmm_stream :: Stream IO CmmGroup ()
         cmm_stream = {-# SCC "StgCmm" #-}
-            StgCmm.codeGen dflags this_mod data_tycons
+            lookupHook stgCmmHook StgCmm.codeGen dflags dflags this_mod data_tycons
                            cost_centre_info stg_binds hpc_info
 
         -- codegen consumes a stream of CmmGroup, and produces a new
