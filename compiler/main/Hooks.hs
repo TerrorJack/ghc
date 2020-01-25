@@ -4,6 +4,7 @@
 --     refer to *types*, rather than *code*
 
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE RankNTypes #-}
 module Hooks ( Hooks
              , emptyHooks
              , lookupHook
@@ -23,6 +24,11 @@ module Hooks ( Hooks
              , createIservProcessHook
              , stgCmmHook
              , cmmToRawCmmHook
+             , startIServHook
+             , iservCallHook
+             , readIServHook
+             , writeIServHook
+             , stopIServHook
              ) where
 
 import GhcPrelude
@@ -52,8 +58,11 @@ import CostCentre
 import StgSyn
 import Stream
 import Cmm
+import GHCi.Message
 
+import Data.Binary
 import Data.Maybe
+import Type.Reflection (Typeable)
 
 {-
 ************************************************************************
@@ -83,6 +92,11 @@ emptyHooks = Hooks
   , createIservProcessHook = Nothing
   , stgCmmHook             = Nothing
   , cmmToRawCmmHook        = Nothing
+  , startIServHook         = Nothing
+  , iservCallHook          = Nothing
+  , readIServHook          = Nothing
+  , writeIServHook         = Nothing
+  , stopIServHook          = Nothing
   }
 
 data Hooks = Hooks
@@ -109,6 +123,11 @@ data Hooks = Hooks
             -> [CgStgTopBinding] -> HpcInfo -> Stream IO CmmGroup ())
   , cmmToRawCmmHook        :: Maybe (DynFlags -> Maybe Module -> Stream IO CmmGroup ()
             -> IO (Stream IO RawCmmGroup ()))
+  , startIServHook         :: Maybe (HscEnv -> IO IServ)
+  , iservCallHook          :: forall a . (Binary a, Typeable a) => Maybe (HscEnv -> IServ -> Message a -> IO a)
+  , readIServHook          :: forall a . (Binary a, Typeable a) => Maybe (HscEnv -> IServ -> IO a)
+  , writeIServHook         :: forall a . (Binary a, Typeable a) => Maybe (HscEnv -> IServ -> a -> IO ())
+  , stopIServHook          :: Maybe (HscEnv -> IO ())
   }
 
 getHooked :: (Functor f, HasDynFlags f) => (Hooks -> Maybe a) -> a -> f a
