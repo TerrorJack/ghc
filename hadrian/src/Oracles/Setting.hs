@@ -1,6 +1,7 @@
 module Oracles.Setting (
     configFile, Setting (..), SettingList (..), setting, settingList, getSetting,
     getSettingList,  anyTargetPlatform, anyTargetOs, anyTargetArch, anyHostOs,
+    isElfTarget,
     ghcWithInterpreter, ghcEnableTablesNextToCode, useLibFFIForAdjustors,
     ghcCanonVersion, cmdLineLengthLimit, iosHost, osxHost, windowsHost,
     hostSupportsRPaths, topDirectory, libsuf
@@ -165,6 +166,13 @@ iosHost = anyHostOs ["ios"]
 -- | Check whether the host OS setting is set to @"darwin"@.
 osxHost :: Action Bool
 osxHost = anyHostOs ["darwin"]
+
+-- | Check whether the target OS uses the ELF object format.
+isElfTarget :: Action Bool
+isElfTarget = anyTargetOs
+    [ "linux", "freebsd", "dragonfly", "openbsd", "netbsd", "solaris2", "kfreebsdgnu"
+    , "haiku", "linux-android"
+    ]
 
 -- | Check whether the host OS supports the @-rpath@ linker option when
 -- using dynamic linking.
