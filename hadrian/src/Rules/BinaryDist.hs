@@ -104,7 +104,7 @@ bindistRules = do
 
         let ghcBuildDir      = root -/- stageString Stage1
             bindistFilesDir  = root -/- "bindist" -/- ghcVersionPretty
-            ghcVersionPretty = "ghc-" ++ version ++ "-" ++ targetPlatform
+            ghcVersionPretty = "ghc-" ++ version
             rtsIncludeDir    = ghcBuildDir -/- "lib" -/- distDir -/- rtsDir
                                -/- "include"
 
