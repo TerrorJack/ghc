@@ -1,0 +1,14 @@
+resolver: ghc-8.8.4
+
+packages:
+  - ghc-asterius
+  - ghc-bin-asterius
+  - ghc-boot-asterius
+  - ghc-boot-th-asterius
+  - ghc-heap-asterius
+  - ghc-pkg-asterius
+  - ghci-asterius
+  - template-haskell-asterius
+
+ghc-options:
+  $everything: -j

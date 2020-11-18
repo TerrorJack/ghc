@@ -1,0 +1,35 @@
+name: pipeline
+
+on:
+  - push
+  - pull_request
+
+jobs:
+
+  build:
+    name: build
+    runs-on: ubuntu-20.04
+    steps:
+
+      - name: setup-haskell
+        uses: actions/setup-haskell@v1
+        with:
+          ghc-version: 8.8.4
+          stack-version: 2.5.1
+          enable-stack: true
+
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: materialize
+        run: |
+          mkdir ~/.stack
+          echo "system-ghc: true" > ~/.stack/config.yaml
+
+          .github/workflows/make-packages.py
+
+      - name: build
+        run: |
+          stack build --fast
