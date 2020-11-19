@@ -53,7 +53,6 @@ import UniqSupply
 import MonadUtils
 import Util
 import Outputable
-import Module
 
 import Data.Bits
 import Data.Word
@@ -67,9 +66,9 @@ mkEmptyContInfoTable info_lbl
                  , cit_srt  = Nothing
                  , cit_clo  = Nothing }
 
-cmmToRawCmm :: DynFlags -> Maybe Module -> Stream IO CmmGroup ()
+cmmToRawCmm :: DynFlags -> Stream IO CmmGroup ()
             -> IO (Stream IO RawCmmGroup ())
-cmmToRawCmm dflags _ cmms
+cmmToRawCmm dflags cmms
   = do { uniqs <- mkSplitUniqSupply 'i'
        ; let do_one uniqs cmm = do
                 case initUs uniqs $ concatMapM (mkInfoTable dflags) cmm of

@@ -22,8 +22,6 @@ module Hooks ( Hooks
              , runRnSpliceHook
              , getValueSafelyHook
              , createIservProcessHook
-             , stgCmmHook
-             , cmmToRawCmmHook
              , startIServHook
              , iservCallHook
              , readIServHook
@@ -52,12 +50,6 @@ import Type
 import System.Process
 import BasicTypes
 import HsExtension
-import Module
-import TyCon
-import CostCentre
-import StgSyn
-import Stream
-import Cmm
 import GHCi.Message
 
 import Data.Binary
@@ -90,8 +82,6 @@ emptyHooks = Hooks
   , runRnSpliceHook        = Nothing
   , getValueSafelyHook     = Nothing
   , createIservProcessHook = Nothing
-  , stgCmmHook             = Nothing
-  , cmmToRawCmmHook        = Nothing
   , startIServHook         = Nothing
   , iservCallHook          = Nothing
   , readIServHook          = Nothing
@@ -119,10 +109,6 @@ data Hooks = Hooks
   , getValueSafelyHook     :: Maybe (HscEnv -> Name -> Type
                                                           -> IO (Maybe HValue))
   , createIservProcessHook :: Maybe (CreateProcess -> IO ProcessHandle)
-  , stgCmmHook             :: Maybe (DynFlags -> Module -> [TyCon] -> CollectedCCs
-            -> [CgStgTopBinding] -> HpcInfo -> Stream IO CmmGroup ())
-  , cmmToRawCmmHook        :: Maybe (DynFlags -> Maybe Module -> Stream IO CmmGroup ()
-            -> IO (Stream IO RawCmmGroup ()))
   , startIServHook         :: Maybe (HscEnv -> IO IServ)
   , iservCallHook          :: forall a . (Binary a, Typeable a) => Maybe (HscEnv -> IServ -> Message a -> IO a)
   , readIServHook          :: forall a . (Binary a, Typeable a) => Maybe (HscEnv -> IServ -> IO a)

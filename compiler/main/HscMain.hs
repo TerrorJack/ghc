@@ -1379,7 +1379,7 @@ hscGenHardCode hsc_env cgguts mod_summary output_filename = do
 
             ------------------  Code output -----------------------
             rawcmms0 <- {-# SCC "cmmToRawCmm" #-}
-                      lookupHook cmmToRawCmmHook cmmToRawCmm dflags dflags (Just this_mod) cmms
+                      cmmToRawCmm dflags cmms
 
             let dump a = do dumpIfSet_dyn dflags Opt_D_dump_cmm_raw "Raw Cmm"
                               (ppr a)
@@ -1438,7 +1438,7 @@ hscCompileCmmFile hsc_env filename output_filename = runHsc hsc_env $ do
             mod_name = mkModuleName $ "Cmm$" ++ FilePath.takeFileName filename
             cmm_mod = mkModule (thisPackage dflags) mod_name
         (_, cmmgroup) <- cmmPipeline hsc_env (emptySRT cmm_mod) cmm
-        rawCmms <- lookupHook cmmToRawCmmHook cmmToRawCmm dflags dflags Nothing (Stream.yield cmmgroup)
+        rawCmms <- cmmToRawCmm dflags (Stream.yield cmmgroup)
         _ <- codeOutput dflags cmm_mod output_filename no_loc NoStubs [] []
              rawCmms
         return ()
@@ -1465,7 +1465,7 @@ doCodeGen hsc_env this_mod data_tycons
     let stg_binds_w_fvs = annTopBindingsFreeVars stg_binds
     let cmm_stream :: Stream IO CmmGroup ()
         cmm_stream = {-# SCC "StgCmm" #-}
-            lookupHook stgCmmHook StgCmm.codeGen dflags dflags this_mod data_tycons
+            StgCmm.codeGen dflags this_mod data_tycons
                            cost_centre_info stg_binds_w_fvs hpc_info
 
         -- codegen consumes a stream of CmmGroup, and produces a new
