@@ -22,6 +22,7 @@ module Hooks ( Hooks
              , runRnSpliceHook
              , getValueSafelyHook
              , createIservProcessHook
+             , codeOutputHook
              , startIServHook
              , iservCallHook
              , readIServHook
@@ -51,6 +52,9 @@ import System.Process
 import BasicTypes
 import HsExtension
 import GHCi.Message
+import Cmm
+import Module
+import Stream
 
 import Data.Binary
 import Data.Maybe
@@ -82,6 +86,7 @@ emptyHooks = Hooks
   , runRnSpliceHook        = Nothing
   , getValueSafelyHook     = Nothing
   , createIservProcessHook = Nothing
+  , codeOutputHook         = Nothing
   , startIServHook         = Nothing
   , iservCallHook          = Nothing
   , readIServHook          = Nothing
@@ -109,6 +114,10 @@ data Hooks = Hooks
   , getValueSafelyHook     :: Maybe (HscEnv -> Name -> Type
                                                           -> IO (Maybe HValue))
   , createIservProcessHook :: Maybe (CreateProcess -> IO ProcessHandle)
+  , codeOutputHook         :: Maybe (DynFlags -> Module -> FilePath -> ModLocation
+                           -> ForeignStubs -> [(ForeignSrcLang, FilePath)]
+                           -> [InstalledUnitId] -> Stream IO RawCmmGroup ()
+                           -> IO (FilePath, (Bool, Maybe FilePath), [(ForeignSrcLang, FilePath)]))
   , startIServHook         :: Maybe (HscEnv -> IO IServ)
   , iservCallHook          :: forall a . (Binary a, Typeable a) => Maybe (HscEnv -> IServ -> Message a -> IO a)
   , readIServHook          :: forall a . (Binary a, Typeable a) => Maybe (HscEnv -> IServ -> IO a)

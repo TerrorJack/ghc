@@ -34,6 +34,8 @@ import Outputable
 import Module
 import SrcLoc
 
+import Hooks
+
 import Control.Exception
 import System.Directory
 import System.FilePath
@@ -47,7 +49,7 @@ import System.IO
 ************************************************************************
 -}
 
-codeOutput :: DynFlags
+codeOutput, codeOutput' :: DynFlags
            -> Module
            -> FilePath
            -> ModLocation
@@ -60,7 +62,9 @@ codeOutput :: DynFlags
                   (Bool{-stub_h_exists-}, Maybe FilePath{-stub_c_exists-}),
                   [(ForeignSrcLang, FilePath)]{-foreign_fps-})
 
-codeOutput dflags this_mod filenm location foreign_stubs foreign_fps pkg_deps
+codeOutput dflags = lookupHook codeOutputHook codeOutput' dflags dflags
+
+codeOutput' dflags this_mod filenm location foreign_stubs foreign_fps pkg_deps
   cmm_stream
   =
     do  {
@@ -264,4 +268,3 @@ outputForeignStubs_help _fname ""      _header _footer = return False
 outputForeignStubs_help fname doc_str header footer
    = do writeFile fname (header ++ doc_str ++ '\n':footer ++ "\n")
         return True
-
